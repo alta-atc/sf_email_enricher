@@ -5,7 +5,7 @@ import json
 def get_api_key():
     
     # Obtain the credentials from Google Cloud Secrets
-    with open('/secret_anymailfinder_apiKey/credential', 'r') as secret_accessToken:
+    with open('/anymailFinder_apiKey/credential', 'r') as secret_accessToken:
         api_key = secret_accessToken.read().strip()
         return api_key
 

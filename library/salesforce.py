@@ -4,16 +4,12 @@ import json
 def get_access_token():
     
     # Obtain the credentials from Google Cloud Secrets
-    # with open('/secret_accessToken/credential', 'r') as secret_accessToken:
-    #    access_token = secret_accessToken.read().strip()
-    #    sf_url = "https://daxorcorporation.my.salesforce.com"
+     with open('/sf_accessToken/credential', 'r') as secret_accessToken:
+        access_token = secret_accessToken.read().strip()
+        sf_url = "https://daxorcorporation.my.salesforce.com"
 
-    #    return access_token, sf_url
-     
-    access_token = "00D5e000003Ts3R!AQsAQMsltctyWfOtflv.5gJjRh.ZeoJzyFYlXp2WmA16NzFLS9aeP6HniOwg5mzcEx2GulfDHoq9ZMrnf.zx08wxKXMoFE_i"
-    sf_url = "https://daxorcorporation.my.salesforce.com"
+        return access_token, sf_url
 
-    return access_token, sf_url
 
 
 def get_contacts():
