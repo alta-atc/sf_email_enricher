@@ -1,0 +1,20 @@
+steps:
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        gcloud functions deploy daxor_emailEnricher \
+          --region=us-central1 \
+          --source=./ \
+          --runtime=python311 \
+          --allow-unauthenticated \
+          --trigger-topic=trigger_npi_enrichment \
+          --memory=128MB \
+          --min-instances=0 \
+          --max-instances=1 \
+          --ingress-settings=all
+
+timeout: 540s
+options:
+  logging: CLOUD_LOGGING_ONLY

@@ -1,97 +1,92 @@
 
-from library.salesforce import get_contacts, update_account, update_contacts, get_domain_contacts
+from library.salesforce import get_contacts, update_contact
 from library.anymailfinder import get_email
 from datetime import datetime
 import pytz
-from collections import Counter
-
+import time
 
 def daxor_emailEnricher():
+    print("Email Enricher Starting...")
+    
     # Get records from salesforce to enrich 
     contacts_to_enrich = get_contacts()
-    sf_contacts = []
-    account_domains = {} # dictionary to store AccountId-domain mappings
+
+    if not contacts_to_enrich:
+        print("No contacts returned for enrichment.")
+        print("Ending Script Run")
+        return
 
     # begin loop through contacts_to_enrich 
     for contact in contacts_to_enrich:
-        print(f"Processing contact: {contact}")
+        print(f'Processing contact: {contact["Id"]} {contact["FirstName"]} {contact["LastName"]}')
+        
+        # get current datetime for Mexico city
+        tz = pytz.timezone('America/Mexico_City')
+        current_time = datetime.now(tz).strftime('%Y-%m-%dT%H:%M:%S')
 
-        # for each, determine if an email-domain field is set 
-        domain = contact.get("EmailDomain__c")
-        if not domain:
-            account_id = contact.get("AccountId")
-            if account_id in account_domains: 
-                domain = account_domains[account_id]
-                print(f"Found domain for AccountId: {account_id} in cache")
-            else: 
-                # if not set, work out the email domain and set that field 
-                domain = set_domain(contact)
-                account_domains[account_id] = domain # store the found domain
-                update_account(domain, contact)
-                print(f"Updated domain for contact: {contact} to {domain}")
+        # Check if "AccountId" is set
+        if not contact.get("AccountId"):
+            sf_contact = {
+                "Id": contact["Id"],
+                "Email_Enrichment_Status__c": "Account not set",
+                "Force_Enrich_Email__c": False,
+                "Email_Last_Enriched__c": current_time
+            }
+            print("AccountId is not set for this contact. Skipping...")
+            update_contact(sf_contact)
+            continue  # Skip the rest of the loop and move to the next contact
 
         # for each contact, make an API call to anymailfinder 
-        email_address = get_email(contact, domain)
+        email_address, result, validation, error = get_email(contact)
+
+        # if there is an error 
+        if error is not None:
+            sf_contact = {
+                "Id": contact["Id"],
+                "Email_Enrichment_Status__c": error,
+                "Force_Enrich_Email__c": False,
+                "Email_Last_Enriched__c": current_time
+            }
+            print(f'Error for contact: {contact["Id"]} {contact["FirstName"]} {contact["LastName"]} - Error {error}')
+            update_contact(sf_contact)
+            continue  # Skip the rest of the loop and move to the next contact
 
         # if email not found 
         if email_address is None:
             enrichment_status = "Email Not Found"
-            print(f"No email found for contact: {contact}")
+            print(f'No email found for contact: {contact["Id"]} {contact["FirstName"]} {contact["LastName"]} - Result {result} - Validation {validation}')
         else:
             # if email found 
             enrichment_status = "Email Succesfully Found"
-            print(f"Email found for contact: {contact}")
+            print(f'Email found for contact: {contact["Id"]} {contact["FirstName"]} {contact["LastName"]} - found email {email_address} - Result {result} - Validation {validation}')
 
-        # get current datetime for Mexico city
-        mexico_tz = pytz.timezone('America/Mexico_City')
-        current_time = datetime.now(mexico_tz).strftime('%Y-%m-%dT%H:%M:%S')
+
 
         # build the contact object 
         sf_contact = {
+            "Id": contact["Id"],
             "Email": email_address,
             "Email_Enrichment_Status__c": enrichment_status,
-            "Email_Last_Enriched__c": current_time
+            "Email_Last_Enriched__c": current_time,
+            "Force_Enrich_Email__c": False,
+            "Email_Validation_Status__c": validation
         }
 
-        # append sf_contact to sf_contacts list
-        sf_contacts.append(sf_contact)
+        print(f'Constructed Contact: {sf_contact}')
+
+        # update the contact in salesforce
+        print("Updating contact in salesforce...")
+        update_contact(sf_contact)
+        print("Contact updated successfully.")
+
+        # wait for 2 seconds before processing the next contact
+        time.sleep(2)
 
     # end loop 
 
-    # update all contacts using the batch API 
-    update_contacts(sf_contacts)
     print("All contacts updated successfully.")
 
     return
 
 
 
-
-
-def set_domain(contact):
-    # get 100 contacts from the account, where an email address is set 
-    domain_contacts = get_domain_contacts(contact)
-
-    # to store the domain of each contact
-    domains = []
-
-    # for the 100 returned records in domain_contacts
-    for domain_contact in domain_contacts:
-        # look at the field domain_contact("Email")
-        email = domain_contact.get("Email")
-        if email:
-            # break each email after the @ symbol to get the domain 
-            domain = email.split('@')[1]
-            domains.append(domain)
-
-    # then, after this is complete 
-    # we will look for the most common domain 
-    domain_counter = Counter(domains)
-    most_common_domain = domain_counter.most_common(1)[0][0]
-
-    # example, 26 contacts have emails ending in @google.com
-    # and 70 contacts have domains at @gmail.com - we use @gmail.com as the selected domain 
-    selected_domain = most_common_domain
-
-    # note, selected_domain should not include an @
-    return selected_domain
