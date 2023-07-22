@@ -31,7 +31,7 @@ def get_contacts():
         "q": "SELECT Id, FirstName, LastName, Account_Name__c, AccountId, Account_Email_Domain__c "
              "FROM Contact "
              "WHERE Trigger_Email_Enrichment__c = True "
-             "LIMIT 250"
+             "LIMIT 2000"
     }
 
     # Send the API request
