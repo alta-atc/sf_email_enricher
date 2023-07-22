@@ -7,6 +7,7 @@ import time
 from cloudevents.http import CloudEvent
 import functions_framework
 
+@functions_framework.cloud_event
 def daxor_emailEnricher(cloud_event: CloudEvent) -> None:
     print("Email Enricher Starting...")
     
