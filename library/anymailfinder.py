@@ -48,7 +48,7 @@ def get_email(contact):
         validation = result['results']['validation']
         error_explained = None
         print(f"Retrieved email: {email_address} for contact: {contact['Id']} {contact['FirstName']} {contact['LastName']}")
-        print(f"Complete API response: {json.dumps(result, indent=4)}")
+        print(f"Response content: {response.content}")
     else:
         result = response.json()
         success = result['success']
