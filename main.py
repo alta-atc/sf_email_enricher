@@ -1,15 +1,13 @@
 
 from library.salesforce import get_contacts, update_contact
 from library.anymailfinder import get_email
-from datetime import datetime
+from datetime import datetime, timedelta
 import pytz
 import time
 from cloudevents.http import CloudEvent
 import functions_framework
 
-@functions_framework.cloud_event
 def daxor_emailEnricher(cloud_event: CloudEvent) -> None:
-
     print("Email Enricher Starting...")
     
     # Get records from salesforce to enrich 
@@ -20,10 +18,19 @@ def daxor_emailEnricher(cloud_event: CloudEvent) -> None:
         print("Ending Script Run")
         return
 
+    # Record the start time
+    start_time = datetime.now()
+
     # begin loop through contacts_to_enrich 
     for contact in contacts_to_enrich:
+        # Check the elapsed time
+        elapsed_time = datetime.now() - start_time
+        if elapsed_time > timedelta(minutes=8):
+            print("Script has been running for over 8 minutes. Stopping...")
+            break
+
         print(f'Processing contact: {contact["Id"]} {contact["FirstName"]} {contact["LastName"]}')
-        
+
         # get current datetime for Mexico city
         tz = pytz.timezone('America/Mexico_City')
         current_time = datetime.now(tz).strftime('%Y-%m-%dT%H:%M:%S')
@@ -64,8 +71,6 @@ def daxor_emailEnricher(cloud_event: CloudEvent) -> None:
             enrichment_status = "Email Succesfully Found"
             print(f'Email found for contact: {contact["Id"]} {contact["FirstName"]} {contact["LastName"]} - found email {email_address} - Result {result} - Validation {validation}')
 
-
-
         # build the contact object 
         sf_contact = {
             "Id": contact["Id"],
@@ -84,7 +89,7 @@ def daxor_emailEnricher(cloud_event: CloudEvent) -> None:
         print("Contact updated successfully.")
 
         # wait for 2 seconds before processing the next contact
-        time.sleep(2)
+        time.sleep(0.5)
 
     # end loop 
 
