@@ -26,7 +26,7 @@ def daxor_emailEnricher(cloud_event: CloudEvent) -> None:
     for contact in contacts_to_enrich:
         # Check the elapsed time
         elapsed_time = datetime.now() - start_time
-        if elapsed_time > timedelta(minutes=8):
+        if elapsed_time > timedelta(minutes=8.75):
             print("Script has been running for over 8 minutes. Stopping...")
             break
 
