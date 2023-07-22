@@ -9,7 +9,7 @@ steps:
           --source=./ \
           --runtime=python311 \
           --allow-unauthenticated \
-          --trigger-topic=trigger_npi_enrichment \
+          --trigger-topic=trigger_email_enrichment \
           --memory=128MB \
           --min-instances=0 \
           --max-instances=1 \
