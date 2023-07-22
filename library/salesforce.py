@@ -24,3 +24,18 @@ def get_access_token():
     sf_url = "https://daxorcorporation.my.salesforce.com"
 
     return access_token, sf_url
+
+def get_contacts():
+
+    print("Getting Contact records...")
+
+    access_token, sf_url = get_access_token() 
+
+    # Construct Salesforce API URL for Account object using the global variable
+    url = f"{sf_url}/services/data/v58.0/query"
+
+
+    # get the maximum number of contacts in one query 
+    # find contacts where ""
+
+    return contacts

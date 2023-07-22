@@ -3,11 +3,14 @@ from library.salesforce import get_contacts, update_account, update_contacts, ge
 from library.anymailfinder import get_email
 from datetime import datetime
 import pytz
+from collections import Counter
+
 
 def daxor_emailEnricher():
     # Get records from salesforce to enrich 
     contacts_to_enrich = get_contacts()
     sf_contacts = []
+    account_domains = {} # dictionary to store AccountId-domain mappings
 
     # begin loop through contacts_to_enrich 
     for contact in contacts_to_enrich:
@@ -16,10 +19,16 @@ def daxor_emailEnricher():
         # for each, determine if an email-domain field is set 
         domain = contact.get("EmailDomain__c")
         if not domain:
-            # if not set, work out the email domain and set that field 
-            domain = set_domain(contact)
-            update_account(domain, contact)
-            print(f"Updated domain for contact: {contact} to {domain}")
+            account_id = contact.get("AccountId")
+            if account_id in account_domains: 
+                domain = account_domains[account_id]
+                print(f"Found domain for AccountId: {account_id} in cache")
+            else: 
+                # if not set, work out the email domain and set that field 
+                domain = set_domain(contact)
+                account_domains[account_id] = domain # store the found domain
+                update_account(domain, contact)
+                print(f"Updated domain for contact: {contact} to {domain}")
 
         # for each contact, make an API call to anymailfinder 
         email_address = get_email(contact, domain)
@@ -56,7 +65,6 @@ def daxor_emailEnricher():
     return
 
 
-from collections import Counter
 
 
 
