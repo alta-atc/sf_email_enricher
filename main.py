@@ -4,8 +4,12 @@ from library.anymailfinder import get_email
 from datetime import datetime
 import pytz
 import time
+from cloudevents.http import CloudEvent
+import functions_framework
 
-def daxor_emailEnricher():
+@functions_framework.cloud_event
+def daxor_emailEnricher(cloud_event: CloudEvent) -> None:
+
     print("Email Enricher Starting...")
     
     # Get records from salesforce to enrich 
@@ -84,7 +88,7 @@ def daxor_emailEnricher():
 
     # end loop 
 
-    print("All contacts updated successfully.")
+    print("All contacts updated successfully. Ending Script")
 
     return
 
